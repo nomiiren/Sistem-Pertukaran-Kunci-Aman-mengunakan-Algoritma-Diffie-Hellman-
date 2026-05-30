@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="light only" />
+  <title>Diffie-Hellman Key Exchange — Kelompok 12</title>
+  <style>
+/*RESET*/
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/*ROOT COLORS*/
+:root {
+  --blue: #3B82F6;
+  --blue-light: #172554;
+  --blue-dark: #30619d;
+
+  --green: #10B981;
+  --green-light: #052E2B;
+  --green-dark: #098654;
+
+  --success: #22C55E;
+  --success-bg: rgba(34, 197, 94, 0.15);
+
+  --error: #EF4444;
+  --error-bg: rgba(239, 68, 68, 0.12);
+
+  --gray-50: #0F172A;
+  --gray-100: #111827;
+  --gray-150: #1E293B;
+  --gray-200: #334155;
+
+  --gray-400: #94A3B8;
+  --gray-600: #CBD5E1;
+  --gray-800: #F8FAFC;
+
+  --border: rgba(41, 83, 128, 0.407);
+
+  --radius: 14px;
+  --radius-sm: 8px;
+
+  --mono: 'IBM Plex Mono', monospace;
+  --sans: 'IBM Plex Sans', sans-serif;
+}
+
+/*HTML BODY*/
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--sans);
+  background:
+    radial-gradient(circle at top left,
+      #7d64e865,
+      transparent 25%),
+
+    radial-gradient(circle at bottom right,
+      rgba(14, 164, 198, 0.319),
+      transparent 25%),
+    #0a1633ed;
+
+  color: var(--gray-800);
+  min-height: 100vh;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+/*CONTAINER*/
+.container {
+  width: min(1100px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 0 0 60px;
+}
+
+/*HEADER*/
+header {
+  background: rgba(13, 21, 39, 0.886);
+  border-bottom: 1px solid var(--border);
+  padding: 20px 0;
+  margin-bottom: 28px;
+  backdrop-filter: blur(10px);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+header .inner {
+  width: min(1100px, calc(100% - 32px));
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/*LOGO*/
+.logo-box {
+  width: 46px;
+  height: 46px;
+  background:
+    linear-gradient(
+      135deg,
+      #274991,
+      #578192
+    );
+
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  box-shadow:
+    0 10px 25px rgba(37,99,235,0.35);
+}
+
+.logo-box span {
+  color: white;
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+/*HEADER TEXT*/
+.header-text h1 {
+  font-size: 16px;
+  font-weight: 700;
+  color: white;
+  line-height: 1.35;
+}
+
+.header-text p {
+  font-size: 12px;
+  color: var(--gray-400);
+  font-family: var(--mono);
+  margin-top: 2px;
+}
+
+/*CARD*/
+.card {
+  background: rgba(17, 24, 39, 0.92);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 22px;
+  margin-bottom: 16px;
+
+  box-shadow:
+    0 10px 30px rgba(0,0,0,0.25),
+    0 0 0 1px rgba(255,255,255,0.02);
+
+  backdrop-filter: blur(8px);
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 16px 40px rgba(0,0,0,0.35),
+    0 0 20px rgba(59,130,246,0.12);
+}
+
+/*INTRO*/
+
+.intro-card {
+  border-left: 4px solid #3086ffcc;
+}
+
+.intro-title {
+  font-size: 14px;
+  font-weight: 700;
+
+  color: white;
+  margin-bottom: 4px;
+}
+
+.intro-text {
+  font-size: 13px;
+  color: var(--gray-400);
+}
+
+/*SECTION LABEL*/
+.section-label {
+  font-size: 11px;
+  font-weight: 500;
+
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+
+  color: var(--gray-400);
+  font-family: var(--mono);
+  margin: 14px 0 10px;
+}
+
+/*STEP INDICATOR*/
+
+#step-indicator {
+  display: flex;
+  margin-bottom: 18px;
+  background: rgba(17,24,39,0.9);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  overflow-x: auto;
+  box-shadow:
+    0 10px 30px rgba(0,0,0,0.25);
+
+  -webkit-overflow-scrolling: touch;
+}
+
+.step-item {
+  flex: 1 0 140px;
+  padding: 10px 8px;
+  text-align: center;
+  border-right: 1px solid var(--border);
+  transition: all 0.3s ease;
+}
+
+.step-item:last-child {
+  border-right: none;
+}
+
+.step-item .snum {
+  display: block;
+  font-size: 11px;
+  font-family: var(--mono);
+  color: var(--gray-400);
+  margin-bottom: 2px;
+}
+
+.step-item .stxt {
+  display: block;
+  font-size: 11px;
+  color: var(--gray-600);
+  line-height: 1.3;
+}
+
+.step-item.active {
+  background: rgba(59,130,246,0.18);
+  box-shadow:
+    inset 0 -2px 0 #3B82F6;
+}
+
+.step-item.active .snum {
+  color: #60A5FA;
+}
+
+.step-item.active .stxt {
+  color: white;
+  font-weight: 600;
+}
+
+.step-item.done {
+  background: rgba(34,197,94,0.12);
+}
+
+.step-item.done .snum,
+.step-item.done .stxt {
+  color: #4ADE80;
+}
+
+/*PARAM GRID*/
+
+.param-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/*INPUT*/
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.input-group label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--gray-600);
+  font-family: var(--mono);
+}
+
+.input-group label span {
+  font-weight: 400;
+  color: var(--gray-400);
+  margin-left: 4px;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  font-family: var(--mono);
+  font-size: 14px;
+  background: #0F172A;
+  border: 1px solid #334155;
+  color: white;
+  transition: all 0.25s ease;
+  outline: none;
+}
+
+.input-group input:hover {
+  border-color: #475569;
+}
+
+.input-group input:focus {
+  border-color: #3B82F6;
+  background: #111827;
+  box-shadow:
+    0 0 0 4px rgba(59,130,246,0.15),
+    0 0 20px rgba(59,130,246,0.2);
+}
+
+.input-hint {
+  font-size: 11px;
+  color: var(--gray-400);
+  font-family: var(--mono);
+}
+
+/*PARTY GRID*/
+
+.party-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+/*PARTY CARD*/
+.party-card {
+  background: rgba(17, 24, 39, 0.92);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+
+  box-shadow:
+    0 10px 30px rgba(0,0,0,0.25);
+  transition: all 0.3s ease;
+}
+
+.party-card:hover {
+  transform: translateY(-4px);
+}
+
+/*PARTY HEADER*/
+.party-card .party-header {
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.party-card.alice .party-header {
+  background:
+    linear-gradient(
+      135deg,
+      rgba(37,99,235,0.18),
+      rgba(6,182,212,0.12)
+    );
+
+  border-bottom: 1px solid rgba(59,130,246,0.15);
+}
+
+.party-card.bob .party-header {
+  background:
+    linear-gradient(
+      135deg,
+      rgba(16,185,129,0.16),
+      rgba(5,150,105,0.08)
+    );
+
+  border-bottom: 1px solid rgba(16,185,129,0.15);
+}
+
+/*PARTY AVATAR */
+.party-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--mono);
+  flex-shrink: 0;
+}
+
+.alice .party-avatar {
+  background:
+    linear-gradient(
+      135deg,
+      #2563EB,
+      #06B6D4
+    );
+
+  color: white;
+}
+
+.bob .party-avatar {
+  background:
+    linear-gradient(
+      135deg,
+      #059669,
+      #10B981
+    );
+
+  color: white;
+}
+
+/*PARTY INFO*/
+.party-info .pname {
+  font-size: 13px;
+  font-weight: 700;
+  color: white;
+}
+
+.party-info .prole {
+  font-size: 11px;
+  color: var(--gray-400);
+  font-family: var(--mono);
+}
+
+/*PARTY BODY*/
+.party-body {
+  padding: 14px 16px;
+}
+
+.mb-14 {
+  margin-bottom: 14px;
+}
+
+/*FIELD*/
+.field-row {
+  margin-bottom: 12px;
+}
+
+.field-row:last-child {
+  margin-bottom: 0;
+}
+
+.field-label {
+  font-size: 11px;
+  color: var(--gray-400);
+  font-family: var(--mono);
+  margin-bottom: 4px;
+}
+
+/*VALUE DISPLAY*/
+.value-display {
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--gray-400);
+  background: #0F172A;
+  border: 1px solid #334155;
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  min-height: 40px;
+  word-break: break-word;
+  transition: all 0.3s ease;
+}
+
+.value-display.value-blue {
+  color: #93C5FD;
+  background: rgba(37,99,235,0.12);
+  border-color: rgba(37,99,235,0.25);
+}
+
+.value-display.value-green {
+  color: #6EE7B7;
+  background: rgba(16,185,129,0.12);
+  border-color: rgba(16,185,129,0.25);
+}
+
+.value-display.value-success {
+  color: #4ADE80;
+  background: rgba(34,197,94,0.12);
+  border-color: rgba(34,197,94,0.25);
+}
+
+.value-display.value-error {
+  color: #FCA5A5;
+  background: rgba(239,68,68,0.12);
+  border-color: rgba(239,68,68,0.25);
+}
+
+/*BUTTON*/
+.btn-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.btn {
+  padding: 11px 20px;
+  border-radius: var(--radius-sm);
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.3s ease;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+}
+
+/* PRIMARY */
+.btn-primary {
+  background:
+    linear-gradient(
+      135deg,
+      #0e2e72,
+      #659ca6
+    );
+
+  color: white;
+  flex: 1;
+  border: none;
+  box-shadow:
+    0 10px 25px rgba(37,99,235,0.3);
+}
+
+.btn-primary:hover {
+  box-shadow:
+    0 14px 35px rgba(37,99,235,0.45);
+  filter: brightness(1.05);
+}
+
+/*SECONDARY*/
+.btn-secondary {
+  background: rgba(255,255,255,0.04);
+  color: white;
+  border-color: rgba(255,255,255,0.08);
+}
+
+.btn-secondary:hover {
+  background: rgba(255,255,255,0.08);
+}
+
+/*ERROR BOX*/
+#error-box {
+  display: none;
+  background: rgba(239,68,68,0.12);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  margin-bottom: 14px;
+  font-size: 13px;
+  color: #FCA5A5;
+  font-family: var(--mono);
+  box-shadow:
+    0 8px 18px rgba(239,68,68,0.08);
+}
+
+/*BADGE*/
+.badge {
+  display: none;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 14px;
+  font-family: var(--mono);
+}
+
+.badge-success {
+  background: rgba(34,197,94,0.14);
+  color: #4ADE80;
+}
+
+.badge-error {
+  background: rgba(239,68,68,0.14);
+  color: #FCA5A5;
+}
+
+/*LOG*/
+.log-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+#log-output {
+  background: #020617;
+  border: 1px solid #0F172A;
+  border-radius: var(--radius-sm);
+
+  padding: 14px 16px;
+  font-family: var(--mono);
+  font-size: 12px;
+
+  min-height: 180px;
+  max-height: 260px;
+
+  overflow-y: auto;
+  color: #E2E8F0;
+  line-height: 1.75;
+
+  white-space: pre-wrap;
+  word-break: break-word;
+
+  box-shadow:
+    inset 0 0 20px rgba(0,0,0,0.35);
+}
+
+.log-line {
+  margin-bottom: 4px;
+}
+
+.log-line.log-info {
+  color: #7DD3FC;
+}
+
+.log-line.log-success {
+  color: #4ADE80;
+}
+
+.log-line.log-error {
+  color: #FCA5A5;
+}
+
+/*FORMULA BOX*/
+.formula-box {
+  background: rgba(15,23,42,0.85);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: #CBD5E1;
+  line-height: 2;
+  box-shadow:
+    0 10px 30px rgba(0,0,0,0.2);
+}
+
+.formula-box .f-title {
+  font-weight: 600;
+  color: white;
+  margin-bottom: 6px;
+}
+
+.formula-line {
+  word-break: break-word;
+}
+
+.highlight {
+  color: #60A5FA;
+  font-weight: 600;
+}
+
+/*FOOTER*/
+footer {
+  text-align: center;
+  padding: 24px 0;
+  font-size: 12px;
+  color: var(--gray-400);
+  font-family: var(--mono);
+  border-top: 1px solid var(--border);
+  margin-top: 32px;
+}
+
+/*RESPONSIVE*/
+@media (max-width: 900px) {
+  .container,
+  header .inner {
+    width: min(900px, calc(100% - 24px));
+  }
+  .param-grid,
+  .party-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .btn-row {
+    flex-direction: column;
+  }
+  .btn {
+    width: 100%;
+  }
+  .header-text h1 {
+    font-size: 15px;
+  }
+  .card,
+  .party-body {
+    padding: 16px;
+  }
+  .step-item {
+    flex: 1 0 120px;
+  }
+
+  #log-output {
+    font-size: 11px;
+    min-height: 200px;
+  }
+}
+
+@media (max-width: 420px) {
+  .container {
+    width: calc(100% - 16px);
+  }
+  .section-label {
+    font-size: 10px;
+  }
+  .value-display {
+    font-size: 13px;
+  }
+  .step-item {
+    flex: 1 0 110px;
+  }
+  .header-text h1 {
+    font-size: 14px;
+  }
+  .intro-text {
+    font-size: 12px;
+  }
+}
+</style>
+</head>
+<body>
+
+  <header>
+    <div class="inner">
+      <div class="logo-box">
+        <span>DH</span>
+      </div>
+      <div class="header-text">
+        <h1>Implementasi Algoritma Diffie-Hellman pada Sistem Pertukaran Kunci Aman Berbasis Web</h1>
+        <p>Kelompok 12 · Sistem Keamanan</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <section class="intro-card card">
+      <div class="intro-title">Simulasi Pertukaran Kunci</div>
+      <p class="intro-text">
+        Masukkan parameter publik, private key pihak A dan B, lalu jalankan simulasi untuk melihat proses
+        pembentukan shared secret key secara bertahap.
+      </p>
+    </section>
+
+    <div id="step-indicator" aria-label="Langkah simulasi">
+      <div class="step-item">
+        <span class="snum">01</span>
+        <span class="stxt">Parameter Publik</span>
+      </div>
+      <div class="step-item">
+        <span class="snum">02</span>
+        <span class="stxt">Private Key</span>
+      </div>
+      <div class="step-item">
+        <span class="snum">03</span>
+        <span class="stxt">Public Key</span>
+      </div>
+      <div class="step-item">
+        <span class="snum">04</span>
+        <span class="stxt">Pertukaran</span>
+      </div>
+      <div class="step-item">
+        <span class="snum">05</span>
+        <span class="stxt">Shared Key</span>
+      </div>
+      <div class="step-item">
+        <span class="snum">06</span>
+        <span class="stxt">Verifikasi</span>
+      </div>
+    </div>
+
+    <p class="section-label">Parameter publik (disepakati bersama)</p>
+    <section class="card">
+      <div class="param-grid">
+        <div class="input-group">
+          <label for="input-p">p <span>— bilangan prima</span></label>
+          <input type="number" id="input-p" placeholder="contoh: 23" min="2" inputmode="numeric" />
+          <span class="input-hint">Harus berupa bilangan prima</span>
+        </div>
+
+        <div class="input-group">
+          <label for="input-g">g <span>— generator</span></label>
+          <input type="number" id="input-g" placeholder="contoh: 5" min="2" inputmode="numeric" />
+          <span class="input-hint">Harus 1 &lt; g &lt; p</span>
+        </div>
+      </div>
+    </section>
+
+    <p class="section-label">Private key masing-masing pihak (rahasia)</p>
+    <section class="party-grid">
+
+      <article class="party-card alice">
+        <div class="party-header">
+          <div class="party-avatar">A</div>
+          <div class="party-info">
+            <div class="pname">Pihak A</div>
+            <div class="prole">pengirim</div>
+          </div>
+        </div>
+        <div class="party-body">
+          <div class="input-group mb-14">
+            <label for="input-a">Private key (a) <span>— rahasia</span></label>
+            <input type="number" id="input-a" placeholder="contoh: 6" min="1" inputmode="numeric" />
+          </div>
+
+          <div class="field-row">
+            <div class="field-label">Public key A = g^a mod p</div>
+            <div class="value-display" id="pub-a">—</div>
+          </div>
+
+          <div class="field-row">
+            <div class="field-label">Shared secret K = B^a mod p</div>
+            <div class="value-display" id="shared-a">—</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="party-card bob">
+        <div class="party-header">
+          <div class="party-avatar">B</div>
+          <div class="party-info">
+            <div class="pname">Pihak B</div>
+            <div class="prole">penerima</div>
+          </div>
+        </div>
+        <div class="party-body">
+          <div class="input-group mb-14">
+            <label for="input-b">Private key (b) <span>— rahasia</span></label>
+            <input type="number" id="input-b" placeholder="contoh: 15" min="1" inputmode="numeric" />
+          </div>
+
+          <div class="field-row">
+            <div class="field-label">Public key B = g^b mod p</div>
+            <div class="value-display" id="pub-b">—</div>
+          </div>
+
+          <div class="field-row">
+            <div class="field-label">Shared secret K = A^b mod p</div>
+            <div class="value-display" id="shared-b">—</div>
+          </div>
+        </div>
+      </article>
+
+    </section>
+
+    <div class="btn-row">
+      <button type="button" class="btn btn-primary" onclick="jalankanDH()">Jalankan Simulasi</button>
+      <button type="button" class="btn btn-secondary" onclick="resetForm()">Reset</button>
+    </div>
+
+    <div id="error-box" role="alert" aria-live="polite">
+      <span id="error-msg"></span>
+    </div>
+
+    <section id="result-section" style="display:none;">
+      <span class="badge" id="status-badge"></span>
+
+      <p class="section-label">Log proses</p>
+      <div class="card log-card">
+        <div id="log-output"></div>
+      </div>
+    </section>
+
+    <p class="section-label" style="margin-top: 24px;">Referensi rumus</p>
+    <section class="formula-box">
+      <div class="f-title">Diffie-Hellman Key Exchange — Whitfield Diffie & Martin Hellman, 1976</div>
+      <div class="formula-line">
+        <span class="highlight">Public key :</span> A = g<sup>a</sup> mod p &nbsp;|&nbsp; B = g<sup>b</sup> mod p
+      </div>
+      <div class="formula-line">
+        <span class="highlight">Shared key :</span> K<sub>A</sub> = B<sup>a</sup> mod p &nbsp;|&nbsp; K<sub>B</sub> = A<sup>b</sup> mod p
+      </div>
+      <div class="formula-line">
+        <span class="highlight">Bukti :</span> (g<sup>b</sup>)<sup>a</sup> mod p = (g<sup>a</sup>)<sup>b</sup> mod p = g<sup>ab</sup> mod p
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    Kelompok 12 Teknik Informatika UMRAH 2026
+  </footer>
+
+  <script>
+// ============================================================
+//  script.js — Logika Algoritma Diffie-Hellman
+//  Kelompok 12 | Sistem Keamanan | UMRAH 2026
+// ============================================================
+
+let logCount = 0;
+
+// Menghitung (base ^ exp) mod mod menggunakan BigInt
+function modPow(base, exp, mod) {
+  if (mod === 1n) return 0n;
+
+  let result = 1n;
+  base = base % mod;
+
+  while (exp > 0n) {
+    if (exp % 2n === 1n) {
+      result = (result * base) % mod;
+    }
+    exp = exp / 2n;
+    base = (base * base) % mod;
+  }
+
+  return result;
+}
+
+// Cek bilangan prima
+function isPrime(n) {
+  if (n < 2) return false;
+  if (n === 2) return true;
+  if (n % 2 === 0) return false;
+
+  const limit = Math.floor(Math.sqrt(n));
+  for (let i = 3; i <= limit; i += 2) {
+    if (n % i === 0) return false;
+  }
+  return true;
+}
+
+// Cari bilangan prima berikutnya
+function nextPrime(n) {
+  let candidate = n + 1;
+  while (!isPrime(candidate)) candidate++;
+  return candidate;
+}
+
+// Tambah baris ke log
+function addLog(msg, type = '') {
+  const log = document.getElementById('log-output');
+  const line = document.createElement('div');
+
+  logCount += 1;
+  line.className = 'log-line' + (type ? ' log-' + type : '');
+  line.textContent = `${logCount}. ${msg}`;
+
+  log.appendChild(line);
+  log.scrollTop = log.scrollHeight;
+}
+
+// Reset tampilan output
+function resetOutput() {
+  logCount = 0;
+
+  document.getElementById('log-output').innerHTML = '';
+  document.getElementById('result-section').style.display = 'none';
+  document.getElementById('error-box').style.display = 'none';
+
+  ['pub-a', 'pub-b', 'shared-a', 'shared-b'].forEach((id) => {
+    const el = document.getElementById(id);
+    el.textContent = '—';
+    el.className = 'value-display';
+  });
+
+  const badge = document.getElementById('status-badge');
+  badge.style.display = 'none';
+  badge.textContent = '';
+  badge.className = 'badge';
+}
+
+// Tombol reset
+function resetForm() {
+  document.getElementById('input-p').value = '';
+  document.getElementById('input-g').value = '';
+  document.getElementById('input-a').value = '';
+  document.getElementById('input-b').value = '';
+
+  resetOutput();
+
+  document.querySelectorAll('.step-item').forEach((item) => {
+    item.classList.remove('active', 'done');
+  });
+}
+
+// Tandai langkah aktif
+function setStep(num) {
+  document.querySelectorAll('.step-item').forEach((el, i) => {
+    if (i + 1 < num) {
+      el.classList.remove('active');
+      el.classList.add('done');
+    } else if (i + 1 === num) {
+      el.classList.add('active');
+      el.classList.remove('done');
+    } else {
+      el.classList.remove('active', 'done');
+    }
+  });
+}
+
+// Tampilkan error
+function showError(msg) {
+  const box = document.getElementById('error-box');
+  const errorMsg = document.getElementById('error-msg');
+
+  errorMsg.textContent = msg;
+  box.style.display = 'block';
+}
+
+// Fungsi utama
+async function jalankanDH() {
+  resetOutput();
+
+  const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  const pRaw = parseInt(document.getElementById('input-p').value, 10);
+  const gRaw = parseInt(document.getElementById('input-g').value, 10);
+  const aRaw = parseInt(document.getElementById('input-a').value, 10);
+  const bRaw = parseInt(document.getElementById('input-b').value, 10);
+
+  // Validasi
+  if (isNaN(pRaw) || isNaN(gRaw) || isNaN(aRaw) || isNaN(bRaw)) {
+    showError('Semua field wajib diisi. Pastikan tidak ada yang kosong.');
+    return;
+  }
+
+  if (!isPrime(pRaw)) {
+    showError(`p = ${pRaw} bukan bilangan prima. Coba gunakan p = ${nextPrime(pRaw)}.`);
+    return;
+  }
+
+  if (gRaw <= 1 || gRaw >= pRaw) {
+    showError(`g harus berada di antara 1 dan p. Karena p = ${pRaw}, gunakan g antara 2 sampai ${pRaw - 1}.`);
+    return;
+  }
+
+  if (aRaw <= 0 || bRaw <= 0) {
+    showError('Private key (a dan b) harus berupa bilangan bulat positif lebih dari 0.');
+    return;
+  }
+
+  const p = BigInt(pRaw);
+  const g = BigInt(gRaw);
+  const a = BigInt(aRaw);
+  const b = BigInt(bRaw);
+
+  document.getElementById('result-section').style.display = 'block';
+
+  // Langkah 1
+  setStep(1);
+  addLog(`Parameter publik disepakati: p = ${pRaw}, g = ${gRaw}`, 'info');
+  addLog(`p adalah bilangan prima, g adalah generator`, 'info');
+  await delay(400);
+
+  // Langkah 2
+  setStep(2);
+  addLog(`Pihak A memilih private key: a = ${aRaw} (rahasia, tidak dikirim)`);
+  addLog(`Pihak B memilih private key: b = ${bRaw} (rahasia, tidak dikirim)`);
+  await delay(400);
+
+  // Langkah 3
+  setStep(3);
+  const A = modPow(g, a, p);
+  const B = modPow(g, b, p);
+
+  addLog(`Pihak A hitung: A = ${gRaw}^${aRaw} mod ${pRaw} = ${A}`, 'info');
+  addLog(`Pihak B hitung: B = ${gRaw}^${bRaw} mod ${pRaw} = ${B}`, 'info');
+
+  document.getElementById('pub-a').textContent = A.toString();
+  document.getElementById('pub-a').className = 'value-display value-blue';
+
+  document.getElementById('pub-b').textContent = B.toString();
+  document.getElementById('pub-b').className = 'value-display value-green';
+  await delay(400);
+
+  // Langkah 4
+  setStep(4);
+  addLog(`Pihak A mengirim A = ${A} ke Pihak B (melalui jaringan publik)`);
+  addLog(`Pihak B mengirim B = ${B} ke Pihak A (melalui jaringan publik)`);
+  addLog(`Public key aman dikirim — private key tetap rahasia`, 'success');
+  await delay(400);
+
+  // Langkah 5
+  setStep(5);
+  const KA = modPow(B, a, p);
+  const KB = modPow(A, b, p);
+
+  addLog(`Pihak A hitung: K = B^a mod p = ${B}^${aRaw} mod ${pRaw} = ${KA}`, 'info');
+  addLog(`Pihak B hitung: K = A^b mod p = ${A}^${bRaw} mod ${pRaw} = ${KB}`, 'info');
+
+  document.getElementById('shared-a').textContent = KA.toString();
+  document.getElementById('shared-b').textContent = KB.toString();
+  await delay(400);
+
+  // Langkah 6
+  setStep(6);
+
+  const badge = document.getElementById('status-badge');
+  badge.style.display = 'inline-block';
+
+  if (KA === KB) {
+    document.getElementById('shared-a').className = 'value-display value-success';
+    document.getElementById('shared-b').className = 'value-display value-success';
+
+    badge.textContent = '✓ Pertukaran Kunci Berhasil';
+    badge.className = 'badge badge-success';
+
+    addLog(`VERIFIKASI BERHASIL: K_A = K_B = ${KA}`, 'success');
+    addLog(`Shared secret key = ${KA} — siap digunakan untuk enkripsi`, 'success');
+    addLog(`Bukti matematis: g^(a×b) mod p = ${gRaw}^(${aRaw}×${bRaw}) mod ${pRaw} = ${KA}`, 'success');
+  } else {
+    document.getElementById('shared-a').className = 'value-display value-error';
+    document.getElementById('shared-b').className = 'value-display value-error';
+
+    badge.textContent = '✗ Verifikasi Gagal';
+    badge.className = 'badge badge-error';
+
+    addLog(`VERIFIKASI GAGAL: K_A (${KA}) ≠ K_B (${KB})`, 'error');
+    addLog(`Periksa kembali nilai parameter yang dimasukkan`, 'error');
+  }
+}
+</script>
+</body>
+</html>
